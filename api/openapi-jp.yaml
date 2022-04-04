@@ -16,29 +16,29 @@ tags:
 - name: Metadata
   description: メタデータエンドポイントは、Account/Visitor Metadata の値を取得・更新するためのものです。メタデータは、アプリ内のユーザーの行動に関するインサイトを収集するために使用されます。
 paths:
-  # /account/{accountId}:
-  #  get:
-  #     tags:
-  #     - Account
-  #     summary: アカウントオブジェクトの取得
-  #     operationId: getAccount
-  #     parameters:
-  #     - name: accountId
-  #       in: path
-  #       description: 返すべきアカウントのID。URLエンコードされたアカウントID、またはb64_XXXX。XXXXはURLセーフなbase64エンコードされたアカウントID。
-  #       required: true
-  #       schema:
-  #         type: string
-  #         format: byte
-  #     responses:
-  #         200:
-  #           description: レスポンスはボディとして送信されています
-  #           content:
-  #             application/json:
-  #               schema:
-  #                 $ref: '#/components/schemas/Account'
-  #     security:
-  #     - pendo_integration_key: []
+  /account/{accountId}:
+   get:
+      tags:
+      - Account
+      summary: アカウントオブジェクトの取得
+      operationId: getAccount
+      parameters:
+      - name: accountId
+        in: path
+        description: 返すべきアカウントのID。URLエンコードされたアカウントID、またはb64_XXXX。XXXXはURLセーフなbase64エンコードされたアカウントID。
+        required: true
+        schema:
+          type: string
+          format: byte
+      responses:
+          200:
+            description: レスポンスはボディとして送信されています
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Account'
+      security:
+      - pendo_integration_key: []
 
 
   /metadata/schema/{kind}:
@@ -89,7 +89,7 @@ paths:
             type: string
         - name: group
           in: path
-          description: "メタデータフィールドの種類: `agent` もしくあ `custom`"
+          description: "メタデータフィールドの種類: `agent` もしくは `custom`"
           required: true
           schema:
             type: string
