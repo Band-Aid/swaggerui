@@ -1,0 +1,379 @@
+openapi: 3.0.1
+info:
+  title: Pendo Rest API
+  description: 'v1 APIでは、ガイド、ビジターメタデータ、レポートなどのリソースを要求・変更したり、MongoDBのようなクエリ言語を使ってAggregationクエリを作成したりすることができます。Pendo のメインアプリケーションで表示されるグラフやレポートも、すべて同様のクエリで生成されています。'
+  contact:
+    email: help@pendo.io 
+  version: 0.0.1
+externalDocs:
+  description: Pendo APIについてもっと知る
+  url: https://developers.pendo.io/docs/?bash#v1-api
+servers:
+- url:  https://app.pendo.io/api/v1
+tags:
+# - name: Account
+#   description: アカウントエンドポイントでは、リクエストの一部としてアカウントIDを指定することで、特定のアカウントの詳細を取得することができます。以下に示す {accountId} は、 アカウント一覧ページや、アカウント詳細ページを表示したときの URL の末尾にあります。
+- name: Metadata
+  description: メタデータエンドポイントは、Account/Visitor Metadata の値を取得・更新するためのものです。メタデータは、アプリ内のユーザーの行動に関するインサイトを収集するために使用されます。
+paths:
+  # /account/{accountId}:
+  #  get:
+  #     tags:
+  #     - Account
+  #     summary: アカウントオブジェクトの取得
+  #     operationId: getAccount
+  #     parameters:
+  #     - name: accountId
+  #       in: path
+  #       description: 返すべきアカウントのID。URLエンコードされたアカウントID、またはb64_XXXX。XXXXはURLセーフなbase64エンコードされたアカウントID。
+  #       required: true
+  #       schema:
+  #         type: string
+  #         format: byte
+  #     responses:
+  #         200:
+  #           description: レスポンスはボディとして送信されています
+  #           content:
+  #             application/json:
+  #               schema:
+  #                 $ref: '#/components/schemas/Account'
+  #     security:
+  #     - pendo_integration_key: []
+
+
+  /metadata/schema/{kind}:
+    get:
+      tags:
+      - Metadata
+      description: '単一の種類のメタデータ（訪問者またはアカウント）のメタデータスキーマを取得します。'
+      parameters:
+      - name: kind
+        in: path
+        description: "メタデータの種類を指定する `visitor`または`account`"
+        required: true
+        schema:
+          type: string
+      responses:
+        200:
+          description: |
+            メタデータオブジェクトのコレクションを返します。 
+
+            `Agent`: インストールスニペットを介して渡されるメタデータ
+
+            `Auto`: Pendoによって自動的に生成されたメタデータ
+
+            `Custom`: データ分析に役立つPendo専用カスタムフィールド
+
+            `Pendo`: 訪問者の現在のblacklistguidesの設定を表すメタデータ。
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: '#/components/schemas/accountSchema'
+                  - $ref: '#/components/schemas/visitorSchema'
+      security:
+        - pendo_integration_key: []
+        
+
+  /metadata/{kind}/{group}/value/{id}/{fieldName}:
+    put:
+      tags:
+      - Metadata
+      description: 'アカウントまたは訪問者のエージェントまたはカスタムメタデータのフィールドの値を設定します。カスタムフィールドに値を設定する場合、そのフィールドはデータマッピングで既に作成されている必要があります。'
+      parameters:
+        - name: kind
+          in: path
+          description:  "`visitor` もしくは `account`"
+          required: true
+          schema:
+            type: string
+        - name: group
+          in: path
+          description: "メタデータフィールドの種類: `agent` もしくあ `custom`"
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          description: "アップデート対象となっている`visitor` もしくは `account`のID"
+          required: true
+          schema:
+            type: string
+        - name: fieldName
+          in: path
+          schema:
+            type: string
+          description: "更新されるメタデータフィールドの名前"
+          required: true
+          example: Payment_Status
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              example: Monthly_Pro
+      responses:
+        '200':
+          description: メタデータの値が更新されました
+        404:
+          description: Data Mappingsにカスタムファイルが存在することを確認します。
+      security:
+        - pendo_integration_key: []
+  /metadata/{kind}/{group}/value:
+    post:
+      tags:
+      - Metadata
+      description: |
+       アカウントまたはビジターの複数のメタデータフィールドの値を一括更新できます。
+       
+       カスタムフィールドを設定する場合は、データマッピングですでにフィールドが作成されている必要があります。
+
+       更新のために提出するレコードの数は問いませんが、呼び出しは5分以内に制限されています。それ以上かかるコールは `408 Request Timeout` でタイムアウトします。
+      parameters:
+       - name: kind
+         in: path
+         description:  "`visitor` もしくは `account`"
+         schema:
+           type: string
+         required: true
+       - name: group
+         in: path
+         description: "メタデータフィールドの種類 `agent` もしくは`custom`"
+         schema:
+           type: string
+         required: true
+      requestBody:
+        description: 更新されるメタデータフィールドは配列でなければならない
+        content:
+          application/json:
+            schema:
+              type: array
+              example: [{"visitorId":"4","values":{"firstname":"Quam","lastname":"Quis"}},{"visitorId":"45","values":{"firstname":"Vel","lastname":"Quam"}},{"visitorId":"63","values":{"firstname":"Eros","lastname":"Nam"}}]
+      responses:
+        '200':
+          description: 一括更新完了
+        400:
+          description: JSON の形式が不正であるか、フィールドのマッピングが欠落しているため、受け入れられません。
+        408: 
+          description: リクエスト処理に時間がかかりすぎて、タイムアウトしました
+      security:
+        - pendo_integration_key: []
+
+components:
+  schemas:
+    Account:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "zeta and sons"
+        metadata:
+          type: object
+          properties:
+            agent:
+              type: object
+            auto:
+              type: object
+              properties:
+                firstvisit:
+                  type: integer
+                  example: 1506349414089
+                id: 
+                  type: string
+                  example: "Zeta and Sons"
+                idhash:
+                  type: integer
+                  example: 1129480058
+                lastupdated:
+                  type: integer
+                  example: 1506349414757
+                lastvisited:
+                  type: integer
+                  example: 1506349414089
+    accountSchema:
+      type: object
+      properties:
+        agent:
+          type: object
+          properties:
+            name:
+              type: object
+              properties:
+                Type:
+                  type: string
+                DisplayName:
+                  type: string
+                ElementType:
+                  type: string
+                Dirty:
+                  type: boolean
+                  example: false
+                sample:
+                  type: string
+                  example: org1234567
+                isHidden: 
+                  type: boolean
+                  example: false
+                isDeleted: 
+                  type: boolean
+                  example: false
+                isCalculated:
+                  type: boolean
+                  example: false
+                isPerapp:
+                  type: boolean
+                  example: false
+                neverIndex:
+                  type: boolean
+                  example: false
+        auto:
+          properties:
+            firstvisit:
+              type: object
+              properties:
+                Type:
+                  type: string
+                  example: time
+                DisplayName:
+                  type: string
+                  example: First Visit
+                ElementType:
+                  type: string
+                ElementFormat:
+                  type: string
+                  example: milliseconds
+                Dirty:
+                  type: boolean
+                  example: false
+                isHidden: 
+                  type: boolean
+                  example: false
+                isDeleted: 
+                  type: boolean
+                  example: false
+                isCalculated:
+                  type: boolean
+                  example: false
+                isPerapp:
+                  type: boolean
+                  example: false
+                neverIndex:
+                  type: boolean
+                  example: false
+        id:
+           properties:
+                Type:
+                  type: string
+                  example: string
+                DisplayName:
+                  type: string
+                  example: Account ID
+                ElementType:
+                  type: string
+                Dirty:
+                  type: boolean
+                  example: false                  
+                isHidden: 
+                  type: boolean
+                  example: false
+                isDeleted: 
+                  type: boolean
+                  example: false
+                isCalculated:
+                  type: boolean
+                  example: false
+                isPerapp:
+                  type: boolean
+                  example: false
+                neverIndex:
+                  type: boolean
+                  example: false
+        lastvisit:
+          properties:
+            firstvisit:
+              type: object
+              properties:
+                Type:
+                  type: string
+                  example: time
+                DisplayName:
+                  type: string
+                  example: Last Visit
+                ElementType:
+                  type: string
+                ElementFormat:
+                  type: string
+                  example: milliseconds
+                Dirty:
+                  type: boolean
+                  example: false
+                isHidden: 
+                  type: boolean
+                  example: false
+                isDeleted: 
+                  type: boolean
+                  example: false
+                isCalculated:
+                  type: boolean
+                  example: false
+                isPerapp:
+                  type: boolean
+                  example: false
+                neverIndex:
+                  type: boolean
+                  example: false
+        pendo:
+          properties:
+            donotprocess:
+              type: object
+              properties:
+                Type:
+                  type: string
+                  example: boolean
+                DisplayName:
+                  type: string
+                  example: Do Not Process
+                ElementType:
+                  type: string
+                ElementFormat:
+                  type: string
+                Dirty:
+                  type: boolean
+                  example: false
+                isHidden: 
+                  type: boolean
+                  example: false
+                isDeleted: 
+                  type: boolean
+                  example: false
+                isCalculated:
+                  type: boolean
+                  example: false
+                isPerapp:
+                  type: boolean
+                  example: false
+                neverIndex:
+                  type: boolean
+                  example: false
+    visitorSchema:
+      type: object
+      properties:
+        agent:
+         properties:
+           full_name:
+             type: object
+             properties:
+               Type:
+                 type: string
+                 example: string
+
+             
+
+        
+        
+      
+  securitySchemes:
+    pendo_integration_key:
+      type: apiKey
+      in: header
+      name: x-pendo-integration-key
