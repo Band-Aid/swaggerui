@@ -113,7 +113,7 @@ paths:
               type: object
               example: Monthly_Pro
       responses:
-        '200':
+        200:
           description: メタデータの値が更新されました
         404:
           description: Data Mappingsにカスタムファイルが存在することを確認します。
