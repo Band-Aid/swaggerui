@@ -3,7 +3,7 @@ name: "swagger release"
 on:
   pull_request:
     branches:
-      - 'main'
+      - 'master'
     types: [opened, synchronize, closed]
 
 jobs:
