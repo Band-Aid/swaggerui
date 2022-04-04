@@ -1,11 +1,7 @@
 name: "swagger release"
 
 on:
-  pull_request:
-    branches:
-      - 'master'
-    types: [opened, synchronize, closed]
-
+  push
 jobs:
   swagger-validate:
     runs-on: ubuntu-latest
