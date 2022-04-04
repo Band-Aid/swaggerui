@@ -150,7 +150,7 @@ paths:
               type: array
               example: [{"visitorId":"4","values":{"firstname":"Quam","lastname":"Quis"}},{"visitorId":"45","values":{"firstname":"Vel","lastname":"Quam"}},{"visitorId":"63","values":{"firstname":"Eros","lastname":"Nam"}}]
       responses:
-        '200':
+        200:
           description: 一括更新完了
         400:
           description: JSON の形式が不正であるか、フィールドのマッピングが欠落しているため、受け入れられません。
